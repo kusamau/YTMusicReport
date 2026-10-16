@@ -241,7 +241,11 @@ pipeline {
                     script {
                         try {
                             withCredentials([string(credentialsId: 'github-issues-token', variable: 'GH_TOKEN')]) {
-                                fileSonarIssuesAsGithubTasks(projectKey: env.LCI_SONAR_KEY)
+                                fileSonarIssuesAsGithubTasks(
+                                    projectKey: env.LCI_SONAR_KEY,
+                                    mainBranches: ['main', 'develop'],
+                                    severities: ['BLOCKER', 'CRITICAL', 'MAJOR', 'MINOR', 'INFO'],
+                                )
                             }
                         } catch (err) { echo "Skipping SonarQube issue filing: ${err.message}" }
                     }
