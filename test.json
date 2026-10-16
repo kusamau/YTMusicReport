@@ -1,0 +1,522 @@
+[
+  {
+    "position": 1,
+    "video_id": "1JIKMsO_CZc",
+    "title": "Up556",
+    "artists": [
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Up556",
+      "id": "MPREb_B3E8GMJF7I1"
+    },
+    "duration": "3:42",
+    "plays_display": "22M plays",
+    "plays_estimate": 22000000
+  },
+  {
+    "position": 2,
+    "video_id": "oOKBN5AJU_8",
+    "title": "Up Now",
+    "artists": [
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Up Now",
+      "id": "MPREb_jRzxNE45OMo"
+    },
+    "duration": "2:10",
+    "plays_display": "334K plays",
+    "plays_estimate": 334000
+  },
+  {
+    "position": 3,
+    "video_id": "s93M3mNd1T8",
+    "title": "let you know",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "let you know",
+      "id": "MPREb_yuVzg1QTSA5"
+    },
+    "duration": "2:39",
+    "plays_display": "72K plays",
+    "plays_estimate": 72000
+  },
+  {
+    "position": 4,
+    "video_id": "ayg0W2f9dvg",
+    "title": "percocet & lean",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      },
+      {
+        "name": "Lade",
+        "id": "UCQFl1FMkMQ2Q9PYBRqif0ng"
+      }
+    ],
+    "album": {
+      "name": "stfu, vol. 3",
+      "id": "MPREb_beT9luLUkuq"
+    },
+    "duration": "2:45",
+    "plays_display": "34K plays",
+    "plays_estimate": 34000
+  },
+  {
+    "position": 5,
+    "video_id": "ElYN8IIOBUE",
+    "title": "ocean",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "stfu, vol. 3",
+      "id": "MPREb_beT9luLUkuq"
+    },
+    "duration": "1:33",
+    "plays_display": "22K plays",
+    "plays_estimate": 22000
+  },
+  {
+    "position": 6,
+    "video_id": "JvLXIWHwgoM",
+    "title": "Glock 19 (feat. KiddUzi)",
+    "artists": [
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Glock 19",
+      "id": "MPREb_zsXg2tvv1BR"
+    },
+    "duration": "2:16",
+    "plays_display": "36K plays",
+    "plays_estimate": 36000
+  },
+  {
+    "position": 7,
+    "video_id": "G1jqVmMELKQ",
+    "title": "wtf u do?",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "wtf u do?",
+      "id": "MPREb_0owH8ukBNFs"
+    },
+    "duration": "2:04",
+    "plays_display": "34K plays",
+    "plays_estimate": 34000
+  },
+  {
+    "position": 8,
+    "video_id": "itJs6ojxSWc",
+    "title": "no plain",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "stfu, vol. 2",
+      "id": "MPREb_1mlhDllS4Lw"
+    },
+    "duration": "2:02",
+    "plays_display": "19K plays",
+    "plays_estimate": 19000
+  },
+  {
+    "position": 9,
+    "video_id": "QuzWwtyFtLU",
+    "title": "prada (bonus)",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "anhedonia (deluxe)",
+      "id": "MPREb_SyPqhnFsnPI"
+    },
+    "duration": "2:05",
+    "plays_display": "17K plays",
+    "plays_estimate": 17000
+  },
+  {
+    "position": 10,
+    "video_id": "x6vvaAWxSFo",
+    "title": "Walk In Dis",
+    "artists": [
+      {
+        "name": "Snow Banks",
+        "id": "UCEacFuxijnmWTWC-oMJ9tgQ"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Walk In Dis",
+      "id": "MPREb_sB9prwbCC1h"
+    },
+    "duration": "2:30",
+    "plays_display": "40K plays",
+    "plays_estimate": 40000
+  },
+  {
+    "position": 11,
+    "video_id": "HU4PfiinECM",
+    "title": "You",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:00",
+    "plays_display": "3.3K plays",
+    "plays_estimate": 3300
+  },
+  {
+    "position": 12,
+    "video_id": "QBhgTts4Q20",
+    "title": "no ceiling",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "stfu, vol. 1",
+      "id": "MPREb_au5IFOs8dmW"
+    },
+    "duration": "2:19",
+    "plays_display": "3.3K plays",
+    "plays_estimate": 3300
+  },
+  {
+    "position": 13,
+    "video_id": "0llbqsOctXM",
+    "title": "Juice Style",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:21",
+    "plays_display": "3.6K plays",
+    "plays_estimate": 3600
+  },
+  {
+    "position": 14,
+    "video_id": "rPeA5aT3D_4",
+    "title": "Protect My Soul",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:20",
+    "plays_display": "2.8K plays",
+    "plays_estimate": 2800
+  },
+  {
+    "position": 15,
+    "video_id": "bnx0vD0hPHM",
+    "title": "Off White Roach",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:13",
+    "plays_display": "2.3K plays",
+    "plays_estimate": 2300
+  },
+  {
+    "position": 16,
+    "video_id": "apn9phGYkec",
+    "title": "Clout",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:05",
+    "plays_display": "1.8K plays",
+    "plays_estimate": 1800
+  },
+  {
+    "position": 17,
+    "video_id": "QcXRMzuQqV4",
+    "title": "Wokhardt Pint",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:33",
+    "plays_display": "2.5K plays",
+    "plays_estimate": 2500
+  },
+  {
+    "position": 18,
+    "video_id": "TmDYDqthHis",
+    "title": "Walk Out (feat. FANETO)",
+    "artists": [
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Indecisive",
+      "id": "MPREb_o66fb1ZGgG3"
+    },
+    "duration": "3:37",
+    "plays_display": "663 plays",
+    "plays_estimate": 663
+  },
+  {
+    "position": 19,
+    "video_id": "Ot9FDrufgqA",
+    "title": "Air",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:22",
+    "plays_display": "2.6K plays",
+    "plays_estimate": 2600
+  },
+  {
+    "position": 20,
+    "video_id": "lSJ1rCkRfzo",
+    "title": "Enemies",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "Jace!",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Are We There Yet?",
+      "id": "MPREb_8DlNJxR1O0n"
+    },
+    "duration": "1:20",
+    "plays_display": "14K plays",
+    "plays_estimate": 14000
+  },
+  {
+    "position": 21,
+    "video_id": "9Z58S6t15sw",
+    "title": "Walk In",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:34",
+    "plays_display": "2.5K plays",
+    "plays_estimate": 2500
+  },
+  {
+    "position": 22,
+    "video_id": "gu57j1BARqk",
+    "title": "Step On Shit",
+    "artists": [
+      {
+        "name": "Yung Deco",
+        "id": "UCcAe4JwLbPHEvAlWPQftQZw"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "Iayze In Juice World",
+      "id": "MPREb_yQos2JKyHo0"
+    },
+    "duration": "2:17",
+    "plays_display": "2.8K plays",
+    "plays_estimate": 2800
+  },
+  {
+    "position": 23,
+    "video_id": "70nbs9Fca1M",
+    "title": "mad!",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "Iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "##life",
+      "id": "MPREb_a2Y52260HUi"
+    },
+    "duration": "1:21",
+    "plays_display": "1.6K plays",
+    "plays_estimate": 1600
+  },
+  {
+    "position": 24,
+    "video_id": "FgwpiX6U83Q",
+    "title": "percocet & lean",
+    "artists": [
+      {
+        "name": "jamesstfu",
+        "id": "UCA_RejVBeVfKLzUp-rKC4Pg"
+      },
+      {
+        "name": "ladeftw!",
+        "id": "UCh6sMZCPseaTs3czrJns9yA"
+      },
+      {
+        "name": "iayze",
+        "id": "UCgIltsJc_3itretxv5oma2g"
+      }
+    ],
+    "album": {
+      "name": "stfu, vol. 3. (3 year anniversary deluxe edition)",
+      "id": "MPREb_5YcwH2FW0xS"
+    },
+    "duration": "1:39",
+    "plays_display": "91 plays",
+    "plays_estimate": 91
+  }
+]

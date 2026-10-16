@@ -1,0 +1,19 @@
+{
+  "onResponseReceivedActions": [
+    {
+      "appendContinuationItemsAction": {
+        "continuationItems": [
+          {
+            "musicResponsiveListItemRenderer": {
+              "flexColumns": [
+                {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "You", "navigationEndpoint": {"watchEndpoint": {"videoId": "video-3"}}}]}}},
+                {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Yung Deco", "navigationEndpoint": {"browseEndpoint": {"browseId": "artist-2", "browseEndpointContextSupportedConfigs": {"browseEndpointContextMusicConfig": {"pageType": "MUSIC_PAGE_TYPE_ARTIST"}}}}}]}}},
+                {"musicResponsiveListItemFlexColumnRenderer": {"text": {"simpleText": "3.3K plays"}}}
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

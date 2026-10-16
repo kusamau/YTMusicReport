@@ -1,0 +1,25 @@
+{
+  "contents": [
+    {
+      "musicResponsiveListItemRenderer": {
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Up556", "navigationEndpoint": {"watchEndpoint": {"videoId": "video-1"}}}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "layze", "navigationEndpoint": {"browseEndpoint": {"browseId": "artist-1", "browseEndpointContextSupportedConfigs": {"browseEndpointContextMusicConfig": {"pageType": "MUSIC_PAGE_TYPE_ARTIST"}}}}}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"simpleText": "22M plays"}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "Up556", "navigationEndpoint": {"browseEndpoint": {"browseId": "album-1", "browseEndpointContextSupportedConfigs": {"browseEndpointContextMusicConfig": {"pageType": "MUSIC_PAGE_TYPE_ALBUM"}}}}}]}}}
+        ],
+        "fixedColumns": [{"musicResponsiveListItemFixedColumnRenderer": {"text": {"simpleText": "3:42"}}}]
+      }
+    },
+    {
+      "musicResponsiveListItemRenderer": {
+        "flexColumns": [
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "No count", "navigationEndpoint": {"watchEndpoint": {"videoId": "video-2"}}}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{"text": "layze", "navigationEndpoint": {"browseEndpoint": {"browseId": "artist-1", "browseEndpointContextSupportedConfigs": {"browseEndpointContextMusicConfig": {"pageType": "MUSIC_PAGE_TYPE_ARTIST"}}}}}]}}},
+          {"musicResponsiveListItemFlexColumnRenderer": {"text": {"simpleText": "Unknown"}}}
+        ]
+      }
+    },
+    {"continuationItemRenderer": {"continuationEndpoint": {"continuationCommand": {"token": "next-page"}}}}
+  ]
+}
