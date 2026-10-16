@@ -49,7 +49,7 @@ pipeline {
         CI_MAVEN    = 'false'  // Java build + test    (mavenBuild)
         CI_DEPCHECK = 'false'  // Java dependency CVEs (dependencyCheckGate)
         CI_NODE     = 'false'  // npm audit            (npmAuditGate)
-        CI_SONAR    = 'false'  // SonarQube analysis   (sonarScan)
+        CI_SONAR    = 'true'  // SonarQube analysis   (sonarScan)
 
         CI_MAVEN_POM         = 'auto'   // e.g. 'backend/pom.xml'
         CI_MAVEN_GOALS       = 'clean verify'
