@@ -54,8 +54,8 @@ pipeline {
         CI_MAVEN_POM         = 'auto'   // e.g. 'backend/pom.xml'
         CI_MAVEN_GOALS       = 'clean verify'
         CI_NODE_DIR          = 'auto'   // e.g. 'app/web'
-        CI_SONAR_PROJECT_KEY = 'ytplaycount'  // e.g. 'my-app'
-        CI_SONAR_SOURCES     = 'auto'   // e.g. 'app/backend/src/main/java,app/web/src'
+        CI_SONAR_PROJECT_KEY = 'YTMusicReport'  // e.g. 'my-app'
+        CI_SONAR_SOURCES     = 'src'   // e.g. 'app/backend/src/main/java,app/web/src'
 
         // Dependency-Check is report-only until a project has triaged its
         // backlog: findings colour the build UNSTABLE without breaking it. Set a
