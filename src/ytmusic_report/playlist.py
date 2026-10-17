@@ -60,15 +60,16 @@ def _fetch_playlist_plays(client: _RawClient, playlist_id: str, *, limit: int | 
 
     while True:
         if _add_playlist_rows(response, rows, limit=limit):
-            return rows
+            break
 
         token = _continuation_token(response)
         if not token:
-            return rows
+            break
         if token in seen_tokens:
             raise PlaylistRetrievalError("YouTube Music returned a repeated continuation token")
         seen_tokens.add(token)
         response = _request_continuation_page(client, token)
+    return rows
 
 
 def _request_initial_playlist_page(client: _RawClient, browse_id: str, playlist_id: str) -> JsonDict:
