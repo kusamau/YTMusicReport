@@ -60,6 +60,19 @@ pipeline {
         CI_NODE_DIR          = 'auto'   // e.g. 'app/web'
         CI_SONAR_PROJECT_KEY = 'YTMusicReport'  // e.g. 'my-app'
         CI_SONAR_SOURCES     = 'src'    // e.g. 'app/backend/src/main/java,app/web/src'
+        CI_SONAR_TESTS       = 'tests'  // e.g. 'tests'
+
+        // Python build, test, and coverage configuration. The generated value
+        // picks the first detected Python project; override it for another
+        // module in a multi-project repository. Commands run from this folder.
+        CI_PYTHON_PROJECT_DIR = '.'      // e.g. 'services/api'
+        // Creates an isolated project-local virtualenv. Dependency preference:
+        // requirements-dev.txt, requirements.txt, then editable package install.
+        CI_PYTHON_SETUP_COMMAND = 'python3 -m venv .local-ci-venv && .local-ci-venv/bin/python -m pip install --upgrade pip && if [ -f requirements-dev.txt ]; then .local-ci-venv/bin/python -m pip install -r requirements-dev.txt; elif [ -f requirements.txt ]; then .local-ci-venv/bin/python -m pip install -r requirements.txt; elif [ -f pyproject.toml ] || [ -f setup.py ] || [ -f setup.cfg ]; then .local-ci-venv/bin/python -m pip install -e .; fi && .local-ci-venv/bin/python -m pip install pytest pytest-cov'
+        CI_PYTHON_TEST_COMMAND = '.local-ci-venv/bin/python -m pytest --cov=. --cov-report=xml:coverage.xml'
+        // Cobertura XML imported by SonarQube. 'auto' is coverage.xml below
+        // CI_PYTHON_PROJECT_DIR, and the test command writes it from that root.
+        CI_SONAR_PYTHON_COVERAGE_REPORT_PATHS = 'coverage.xml'
         // A project-local OpenGrep config file or directory may replace this
         // image-baked immutable community ruleset.
         CI_OPENGREP_RULES     = 'auto'
@@ -131,6 +144,19 @@ pipeline {
                     env.LCI_NODE_DIR          = resolve(env.CI_NODE_DIR,          (stack.NODE_DIRS ?: '.').tokenize(',')[0])
                     env.LCI_SONAR_KEY         = resolve(env.CI_SONAR_PROJECT_KEY, stack.PROJECT_NAME)
                     env.LCI_SONAR_SOURCES     = resolve(env.CI_SONAR_SOURCES,     stack.SONAR_SOURCES)
+                    env.LCI_SONAR_TESTS       = resolve(env.CI_SONAR_TESTS,       stack.SONAR_TESTS)
+                    env.LCI_PYTHON_PROJECT_DIR = resolve(
+                        env.CI_PYTHON_PROJECT_DIR,
+                        (stack.PYTHON_DIRS ?: '.').tokenize(',')[0]
+                    )
+                    def defaultPythonCoverageReport = env.LCI_PYTHON_PROJECT_DIR == '.' ?
+                        'coverage.xml' : "${env.LCI_PYTHON_PROJECT_DIR}/coverage.xml"
+                    env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS = resolve(
+                        env.CI_SONAR_PYTHON_COVERAGE_REPORT_PATHS,
+                        stack.HAS_PYTHON == 'true' ? defaultPythonCoverageReport : ''
+                    )
+                    def hasPythonTestCommand = env.CI_PYTHON_TEST_COMMAND?.trim()
+                    env.LCI_RUN_PYTHON_TESTS = stack.HAS_PYTHON == 'true' && hasPythonTestCommand ? 'true' : 'false'
                     env.LCI_OPENGREP_RULES    = resolve(env.CI_OPENGREP_RULES, '/opt/opengrep-rules/configs/security-audit.list')
                     env.LCI_LANGS             = stack.LANGS
 
@@ -140,9 +166,11 @@ pipeline {
   npm audit            : ${env.LCI_RUN_NODE}     (dir: ${env.LCI_NODE_DIR})
   OpenGrep SAST         : ${env.LCI_RUN_OPENGREP} (rules: ${env.LCI_OPENGREP_RULES})
   Bandit Python SAST    : ${env.LCI_RUN_BANDIT} (paths: ${env.LCI_BANDIT_PATHS ?: '(none)'})
+  Python tests          : ${env.LCI_RUN_PYTHON_TESTS} (dir: ${env.LCI_PYTHON_PROJECT_DIR})
   Gitleaks history      : ${env.LCI_RUN_GITLEAKS}
   OSV dependency CVEs   : ${env.LCI_RUN_OSV}
-  SonarQube            : ${env.LCI_RUN_SONAR}    (key: ${env.LCI_SONAR_KEY}, sources: ${env.LCI_SONAR_SOURCES})
+  SonarQube            : ${env.LCI_RUN_SONAR}    (key: ${env.LCI_SONAR_KEY}, sources: ${env.LCI_SONAR_SOURCES}, tests: ${env.LCI_SONAR_TESTS ?: '(none)'})
+  Python coverage XML  : ${env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS ?: '(none)'}
   Languages detected   : ${env.LCI_LANGS ?: '(none)'}
   Fail fast on build   : ${env.CI_FAIL_FAST} (skips later stages if Java build & test fails)"""
                 }
@@ -248,6 +276,42 @@ pipeline {
         }
         // <<< local-ci:stage:node
 
+        // >>> local-ci:stage:python-tests
+        stage('Python tests & coverage') {
+            when { expression { env.LCI_RUN_PYTHON_TESTS == 'true' } }
+            steps {
+                script {
+                    dir(env.LCI_PYTHON_PROJECT_DIR) {
+                        if (env.CI_PYTHON_SETUP_COMMAND?.trim()) {
+                            sh label: 'Install Python test dependencies', script: env.CI_PYTHON_SETUP_COMMAND
+                        }
+                        sh label: 'Run Python tests with coverage', script: env.CI_PYTHON_TEST_COMMAND
+                    }
+
+                    // A passing test command without a usable report would let
+                    // Sonar's Zero Coverage Sensor turn this into an opaque
+                    // Quality Gate failure. Fail here with the configuration
+                    // that needs correcting instead.
+                    if (!env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS?.trim()) {
+                        error 'Python tests are enabled but no coverage report path is configured; set CI_SONAR_PYTHON_COVERAGE_REPORT_PATHS.'
+                    }
+                    for (String report : env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS.tokenize(',')) {
+                        if (!fileExists(report)) {
+                            error "Python tests completed but coverage report '${report}' was not created; update CI_PYTHON_TEST_COMMAND or CI_SONAR_PYTHON_COVERAGE_REPORT_PATHS."
+                        }
+                        int reportStatus = 0
+                        withEnv(["LCI_COVERAGE_REPORT=${report}"]) {
+                            reportStatus = sh(script: 'test -s "$LCI_COVERAGE_REPORT"', returnStatus: true)
+                        }
+                        if (reportStatus != 0) {
+                            error "Python tests completed but coverage report '${report}' is empty; update CI_PYTHON_TEST_COMMAND."
+                        }
+                    }
+                }
+            }
+        }
+        // <<< local-ci:stage:python-tests
+
         // >>> local-ci:stage:opengrep
         stage('SAST (OpenGrep)') {
             when { expression { env.LCI_RUN_OPENGREP == 'true' } }
@@ -314,6 +378,10 @@ pipeline {
                         "-Dsonar.projectKey=${env.LCI_SONAR_KEY}",
                         "-Dsonar.sources=${env.LCI_SONAR_SOURCES}",
                     ]
+                    if (env.LCI_SONAR_TESTS) { sonarArgs << "-Dsonar.tests=${env.LCI_SONAR_TESTS}" }
+                    if (env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS) {
+                        sonarArgs << "-Dsonar.python.coverage.reportPaths=${env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS}"
+                    }
                     def sarifReports = []
                     if (env.LCI_RUN_OPENGREP == 'true') { sarifReports << 'security-reports/opengrep.sarif' }
                     if (env.LCI_RUN_OSV == 'true') { sarifReports << 'security-reports/osv.sarif' }
