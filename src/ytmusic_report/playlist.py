@@ -16,11 +16,8 @@ from urllib.parse import parse_qs, urlparse
 
 JsonDict = dict[str, Any]
 
-_PLAY_RE = re.compile(
-    r"^\s*(?P<number>[0-9][0-9,]*(?:\.[0-9]+)?|[0-9]+,[0-9]+)\s*(?P<suffix>[KMB])?\s+plays?\s*$",
-    re.IGNORECASE,
-)
 _DURATION_RE = re.compile(r"^\d{1,2}:\d{2}(?::\d{2})?$")
+_PLAY_SUFFIXES = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}
 
 
 class PlaylistRetrievalError(RuntimeError):
@@ -57,20 +54,13 @@ def _fetch_playlist_plays(client: _RawClient, playlist_id: str, *, limit: int | 
     """Fetch using an injectable client; kept separate for deterministic tests."""
 
     browse_id = playlist_id if playlist_id.startswith("VL") else f"VL{playlist_id}"
-    try:
-        response = client._send_request("browse", {"browseId": browse_id})
-    except Exception as exc:
-        raise PlaylistRetrievalError(f"Could not retrieve playlist {playlist_id!r}") from exc
-
+    response = _request_initial_playlist_page(client, browse_id, playlist_id)
     rows: list[JsonDict] = []
     seen_tokens: set[str] = set()
+
     while True:
-        for renderer in _playlist_renderers(response):
-            row = _parse_renderer(renderer, position=len(rows) + 1)
-            if row is not None:
-                rows.append(row)
-                if limit is not None and len(rows) >= limit:
-                    return rows
+        if _add_playlist_rows(response, rows, limit=limit):
+            return rows
 
         token = _continuation_token(response)
         if not token:
@@ -78,11 +68,34 @@ def _fetch_playlist_plays(client: _RawClient, playlist_id: str, *, limit: int | 
         if token in seen_tokens:
             raise PlaylistRetrievalError("YouTube Music returned a repeated continuation token")
         seen_tokens.add(token)
+        response = _request_continuation_page(client, token)
 
-        try:
-            response = client._send_request("browse", {"continuation": token})
-        except Exception as exc:
-            raise PlaylistRetrievalError("Could not retrieve the next playlist page") from exc
+
+def _request_initial_playlist_page(client: _RawClient, browse_id: str, playlist_id: str) -> JsonDict:
+    try:
+        return client._send_request("browse", {"browseId": browse_id})
+    except Exception as exc:
+        raise PlaylistRetrievalError(f"Could not retrieve playlist {playlist_id!r}") from exc
+
+
+def _request_continuation_page(client: _RawClient, token: str) -> JsonDict:
+    try:
+        return client._send_request("browse", {"continuation": token})
+    except Exception as exc:
+        raise PlaylistRetrievalError("Could not retrieve the next playlist page") from exc
+
+
+def _add_playlist_rows(response: JsonDict, rows: list[JsonDict], *, limit: int | None) -> bool:
+    """Append a page of rows and return whether the requested limit was reached."""
+
+    for renderer in _playlist_renderers(response):
+        row = _parse_renderer(renderer, position=len(rows) + 1)
+        if row is None:
+            continue
+        rows.append(row)
+        if limit is not None and len(rows) >= limit:
+            return True
+    return False
 
 
 def _playlist_id_from(playlist: str) -> str:
@@ -118,26 +131,27 @@ def _playlist_renderers(value: Any) -> Iterator[JsonDict]:
 def _continuation_token(value: Any) -> str | None:
     """Find the playlist continuation token carried by a list's trailing item."""
 
-    if isinstance(value, dict):
-        continuation = value.get("continuationItemRenderer")
-        if isinstance(continuation, dict):
-            token = (
-                continuation.get("continuationEndpoint", {})
-                .get("continuationCommand", {})
-                .get("token")
-            )
-            if isinstance(token, str) and token:
-                return token
-        for child in value.values():
-            token = _continuation_token(child)
-            if token:
-                return token
-    elif isinstance(value, list):
-        for child in value:
-            token = _continuation_token(child)
-            if token:
-                return token
+    for item in _walk(value):
+        token = _continuation_item_token(item)
+        if token:
+            return token
     return None
+
+
+def _continuation_item_token(value: Any) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    continuation = value.get("continuationItemRenderer")
+    if not isinstance(continuation, dict):
+        return None
+    endpoint = continuation.get("continuationEndpoint")
+    if not isinstance(endpoint, dict):
+        return None
+    command = endpoint.get("continuationCommand")
+    if not isinstance(command, dict):
+        return None
+    token = command.get("token")
+    return token if isinstance(token, str) and token else None
 
 
 def _parse_renderer(renderer: JsonDict, *, position: int) -> JsonDict | None:
@@ -152,7 +166,7 @@ def _parse_renderer(renderer: JsonDict, *, position: int) -> JsonDict | None:
 
     artist_indexes = _artist_indexes(renderer)
     artists = _artists(renderer, artist_indexes)
-    play_index = next((index for index, text in enumerate(columns) if _PLAY_RE.match(text or "")), None)
+    play_index = next((index for index, text in enumerate(columns) if _play_parts(text) is not None), None)
     album_index = _album_index(renderer)
     if album_index is None:
         excluded = {index for index in (title_index, play_index) if index is not None} | artist_indexes
@@ -305,18 +319,52 @@ def _walk(value: Any) -> Iterator[Any]:
 
 
 def _parse_play_estimate(value: str | None) -> int | None:
-    if value is None:
+    parts = _play_parts(value)
+    if parts is None:
         return None
-    match = _PLAY_RE.match(value)
-    if not match:
-        return None
-    number = match.group("number")
-    suffix = match.group("suffix")
+    number, suffix = parts
     try:
         if suffix:
             parsed = Decimal(number.replace(",", "."))
-            multiplier = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}[suffix.upper()]
-            return int(parsed * multiplier)
+            return int(parsed * _PLAY_SUFFIXES[suffix])
         return int(number.replace(",", ""))
     except (InvalidOperation, ValueError):
         return None
+
+
+def _play_parts(value: str | None) -> tuple[str, str | None] | None:
+    """Return the numeric portion and optional magnitude suffix of a display value."""
+
+    if not isinstance(value, str):
+        return None
+    number_and_suffix = _remove_play_word(value)
+    if number_and_suffix is None:
+        return None
+    suffix = number_and_suffix[-1:].upper()
+    if suffix in _PLAY_SUFFIXES:
+        number_and_suffix = number_and_suffix[:-1].rstrip()
+    else:
+        suffix = None
+    if not _valid_play_number(number_and_suffix, abbreviated=bool(suffix)):
+        return None
+    return number_and_suffix, suffix
+
+
+def _remove_play_word(value: str) -> str | None:
+    text = value.strip()
+    for word in ("plays", "play"):
+        if text.casefold().endswith(word) and len(text) > len(word):
+            candidate = text[: -len(word)]
+            if candidate[-1].isspace():
+                return candidate.strip()
+    return None
+
+
+def _valid_play_number(value: str, *, abbreviated: bool) -> bool:
+    normalized = value.replace(",", ".") if abbreviated else value.replace(",", "")
+    whole, separator, fraction = normalized.partition(".")
+    if not whole.isascii() or not whole.isdigit():
+        return False
+    if separator and not abbreviated:
+        return False
+    return not separator or (fraction.isascii() and fraction.isdigit() and "." not in fraction)

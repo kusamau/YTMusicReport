@@ -78,8 +78,11 @@ def test_extracts_metadata_displayed_plays_and_continuations() -> None:
     [
         ("334K plays", 334_000),
         ("2.8K plays", 2800),
+        ("2,8 K plays", 2800),
         ("1,234 plays", 1234),
         ("1.2B plays", 1_200_000_000),
+        ("1.2 plays", None),
+        ("1.2.3 plays", None),
         ("Unknown", None),
         (None, None),
     ],
