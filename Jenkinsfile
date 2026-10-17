@@ -49,13 +49,37 @@ pipeline {
         CI_MAVEN    = 'false'  // Java build + test    (mavenBuild)
         CI_DEPCHECK = 'false'  // Java dependency CVEs (dependencyCheckGate)
         CI_NODE     = 'false'  // npm audit            (npmAuditGate)
-        CI_SONAR    = 'true'  // SonarQube analysis   (sonarScan)
+        CI_SONAR    = 'true'   // SonarQube analysis   (sonarScan)
+        CI_OPENGREP = 'true'   // SAST + intra-file taint analysis (opengrepScan)
+        CI_BANDIT   = 'true'   // Python SAST          (banditScan)
+        CI_GITLEAKS = 'true'   // Git history secrets  (gitleaksScan)
+        CI_OSV      = 'true'   // dependency CVEs      (osvScan)
 
         CI_MAVEN_POM         = 'auto'   // e.g. 'backend/pom.xml'
         CI_MAVEN_GOALS       = 'clean verify'
         CI_NODE_DIR          = 'auto'   // e.g. 'app/web'
         CI_SONAR_PROJECT_KEY = 'YTMusicReport'  // e.g. 'my-app'
-        CI_SONAR_SOURCES     = 'src'   // e.g. 'app/backend/src/main/java,app/web/src'
+        CI_SONAR_SOURCES     = 'src'    // e.g. 'app/backend/src/main/java,app/web/src'
+        CI_SONAR_TESTS       = 'tests'  // e.g. 'tests'
+
+        // Python build, test, and coverage configuration. The generated value
+        // picks the first detected Python project; override it for another
+        // module in a multi-project repository. Commands run from this folder.
+        CI_PYTHON_PROJECT_DIR = '.'      // e.g. 'services/api'
+        // Creates an isolated project-local virtualenv. Dependency preference:
+        // requirements-dev.txt, requirements.txt, then editable package install.
+        CI_PYTHON_SETUP_COMMAND = 'python3 -m venv .local-ci-venv && .local-ci-venv/bin/python -m pip install --upgrade pip && if [ -f requirements-dev.txt ]; then .local-ci-venv/bin/python -m pip install -r requirements-dev.txt; elif [ -f requirements.txt ]; then .local-ci-venv/bin/python -m pip install -r requirements.txt; elif [ -f pyproject.toml ] || [ -f setup.py ] || [ -f setup.cfg ]; then .local-ci-venv/bin/python -m pip install -e .; fi && .local-ci-venv/bin/python -m pip install pytest pytest-cov'
+        CI_PYTHON_TEST_COMMAND = '.local-ci-venv/bin/python -m pytest --cov=. --cov-report=xml:coverage.xml'
+        // Cobertura XML imported by SonarQube. 'auto' is coverage.xml below
+        // CI_PYTHON_PROJECT_DIR, and the test command writes it from that root.
+        CI_SONAR_PYTHON_COVERAGE_REPORT_PATHS = 'coverage.xml'
+        // A project-local OpenGrep config file or directory may replace this
+        // image-baked immutable community ruleset.
+        CI_OPENGREP_RULES     = 'auto'
+        // Comma-separated Python roots for Bandit. 'auto' accepts only the
+        // conventional src/app/lib/source directories detector verified contain
+        // Python files; override for a non-conventional layout.
+        CI_BANDIT_PATHS       = 'src'
 
         // Dependency-Check is report-only until a project has triaged its
         // backlog: findings colour the build UNSTABLE without breaking it. Set a
@@ -100,6 +124,18 @@ pipeline {
                     // Sonar is worth running for any language it can see; gate it
                     // on having found *some* source directory to point it at.
                     env.LCI_RUN_SONAR    = resolve(env.CI_SONAR,    stack.SONAR_SOURCES ? 'true' : 'false')
+                    env.LCI_RUN_OPENGREP = resolve(env.CI_OPENGREP, stack.SONAR_SOURCES ? 'true' : 'false')
+                    def inferredPythonRoots = stack.SONAR_SOURCES.tokenize(',').findAll { root ->
+                        root == 'src' || root == 'app' || root == 'lib' || root == 'source' ||
+                            root.endsWith('/src') || root.endsWith('/app') ||
+                            root.endsWith('/lib') || root.endsWith('/source')
+                    }
+                    env.LCI_BANDIT_PATHS  = resolve(env.CI_BANDIT_PATHS, inferredPythonRoots.join(','))
+                    env.LCI_RUN_BANDIT    = resolve(env.CI_BANDIT,
+                        stack.HAS_PYTHON == 'true' && env.LCI_BANDIT_PATHS ? 'true' : 'false')
+                    env.LCI_RUN_GITLEAKS = resolve(env.CI_GITLEAKS, 'true')
+                    def hasOsvInput = stack.HAS_MAVEN == 'true' || stack.HAS_NODE == 'true' || stack.HAS_PYTHON == 'true'
+                    env.LCI_RUN_OSV      = resolve(env.CI_OSV,      hasOsvInput ? 'true' : 'false')
 
                     env.LCI_MAVEN_POM         = resolve(env.CI_MAVEN_POM,         stack.MAVEN_POM ?: 'pom.xml')
                     // A multi-module reactor wants one aggregated report at the
@@ -108,13 +144,33 @@ pipeline {
                     env.LCI_NODE_DIR          = resolve(env.CI_NODE_DIR,          (stack.NODE_DIRS ?: '.').tokenize(',')[0])
                     env.LCI_SONAR_KEY         = resolve(env.CI_SONAR_PROJECT_KEY, stack.PROJECT_NAME)
                     env.LCI_SONAR_SOURCES     = resolve(env.CI_SONAR_SOURCES,     stack.SONAR_SOURCES)
+                    env.LCI_SONAR_TESTS       = resolve(env.CI_SONAR_TESTS,       stack.SONAR_TESTS)
+                    env.LCI_PYTHON_PROJECT_DIR = resolve(
+                        env.CI_PYTHON_PROJECT_DIR,
+                        (stack.PYTHON_DIRS ?: '.').tokenize(',')[0]
+                    )
+                    def defaultPythonCoverageReport = env.LCI_PYTHON_PROJECT_DIR == '.' ?
+                        'coverage.xml' : "${env.LCI_PYTHON_PROJECT_DIR}/coverage.xml"
+                    env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS = resolve(
+                        env.CI_SONAR_PYTHON_COVERAGE_REPORT_PATHS,
+                        stack.HAS_PYTHON == 'true' ? defaultPythonCoverageReport : ''
+                    )
+                    def hasPythonTestCommand = env.CI_PYTHON_TEST_COMMAND?.trim()
+                    env.LCI_RUN_PYTHON_TESTS = stack.HAS_PYTHON == 'true' && hasPythonTestCommand ? 'true' : 'false'
+                    env.LCI_OPENGREP_RULES    = resolve(env.CI_OPENGREP_RULES, '/opt/opengrep-rules/configs/security-audit.list')
                     env.LCI_LANGS             = stack.LANGS
 
                     echo """Resolved pipeline configuration:
   Maven build          : ${env.LCI_RUN_MAVEN}    (pom: ${env.LCI_MAVEN_POM})
   Dependency-Check     : ${env.LCI_RUN_DEPCHECK} (goal: ${env.LCI_DEPCHECK_GOAL})
   npm audit            : ${env.LCI_RUN_NODE}     (dir: ${env.LCI_NODE_DIR})
-  SonarQube            : ${env.LCI_RUN_SONAR}    (key: ${env.LCI_SONAR_KEY}, sources: ${env.LCI_SONAR_SOURCES})
+  OpenGrep SAST         : ${env.LCI_RUN_OPENGREP} (rules: ${env.LCI_OPENGREP_RULES})
+  Bandit Python SAST    : ${env.LCI_RUN_BANDIT} (paths: ${env.LCI_BANDIT_PATHS ?: '(none)'})
+  Python tests          : ${env.LCI_RUN_PYTHON_TESTS} (dir: ${env.LCI_PYTHON_PROJECT_DIR})
+  Gitleaks history      : ${env.LCI_RUN_GITLEAKS}
+  OSV dependency CVEs   : ${env.LCI_RUN_OSV}
+  SonarQube            : ${env.LCI_RUN_SONAR}    (key: ${env.LCI_SONAR_KEY}, sources: ${env.LCI_SONAR_SOURCES}, tests: ${env.LCI_SONAR_TESTS ?: '(none)'})
+  Python coverage XML  : ${env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS ?: '(none)'}
   Languages detected   : ${env.LCI_LANGS ?: '(none)'}
   Fail fast on build   : ${env.CI_FAIL_FAST} (skips later stages if Java build & test fails)"""
                 }
@@ -220,19 +276,122 @@ pipeline {
         }
         // <<< local-ci:stage:node
 
+        // >>> local-ci:stage:python-tests
+        stage('Python tests & coverage') {
+            when { expression { env.LCI_RUN_PYTHON_TESTS == 'true' } }
+            steps {
+                script {
+                    dir(env.LCI_PYTHON_PROJECT_DIR) {
+                        if (env.CI_PYTHON_SETUP_COMMAND?.trim()) {
+                            sh label: 'Install Python test dependencies', script: env.CI_PYTHON_SETUP_COMMAND
+                        }
+                        sh label: 'Run Python tests with coverage', script: env.CI_PYTHON_TEST_COMMAND
+                    }
+
+                    // A passing test command without a usable report would let
+                    // Sonar's Zero Coverage Sensor turn this into an opaque
+                    // Quality Gate failure. Fail here with the configuration
+                    // that needs correcting instead.
+                    if (!env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS?.trim()) {
+                        error 'Python tests are enabled but no coverage report path is configured; set CI_SONAR_PYTHON_COVERAGE_REPORT_PATHS.'
+                    }
+                    for (String report : env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS.tokenize(',')) {
+                        if (!fileExists(report)) {
+                            error "Python tests completed but coverage report '${report}' was not created; update CI_PYTHON_TEST_COMMAND or CI_SONAR_PYTHON_COVERAGE_REPORT_PATHS."
+                        }
+                        int reportStatus = 0
+                        withEnv(["LCI_COVERAGE_REPORT=${report}"]) {
+                            reportStatus = sh(script: 'test -s "$LCI_COVERAGE_REPORT"', returnStatus: true)
+                        }
+                        if (reportStatus != 0) {
+                            error "Python tests completed but coverage report '${report}' is empty; update CI_PYTHON_TEST_COMMAND."
+                        }
+                    }
+                }
+            }
+        }
+        // <<< local-ci:stage:python-tests
+
+        // >>> local-ci:stage:opengrep
+        stage('SAST (OpenGrep)') {
+            when { expression { env.LCI_RUN_OPENGREP == 'true' } }
+            steps {
+                // Findings leave the stage green while teams triage their
+                // baseline. The wrapper exits non-zero only for scanner/report
+                // errors, which then fail the build normally.
+                opengrepScan(
+                    paths: env.LCI_SONAR_SOURCES.tokenize(','),
+                    rules: env.LCI_OPENGREP_RULES,
+                    logFile: 'opengrep.log',
+                )
+            }
+            post { failure { script { archiveFailure('opengrep', 'opengrep.log') } } }
+        }
+        // <<< local-ci:stage:opengrep
+
+        // >>> local-ci:stage:bandit
+        stage('SAST (Bandit)') {
+            when { expression { env.LCI_RUN_BANDIT == 'true' } }
+            steps {
+                script {
+                    if (!env.LCI_BANDIT_PATHS) {
+                        error 'Python was detected but no Bandit source roots were configured; set CI_BANDIT_PATHS or disable CI_BANDIT.'
+                    }
+                    banditScan(paths: env.LCI_BANDIT_PATHS.tokenize(','), logFile: 'bandit.log')
+                }
+            }
+            post { failure { script { archiveFailure('bandit', 'bandit.log') } } }
+        }
+        // <<< local-ci:stage:bandit
+
+        // >>> local-ci:stage:gitleaks
+        stage('Secrets (Gitleaks)') {
+            when { expression { env.LCI_RUN_GITLEAKS == 'true' } }
+            steps {
+                gitleaksScan(logFile: 'gitleaks.log')
+            }
+            post { failure { script { archiveFailure('gitleaks', 'gitleaks.log') } } }
+        }
+        // <<< local-ci:stage:gitleaks
+
+        // >>> local-ci:stage:osv
+        stage('Dependency CVEs (OSV)') {
+            when { expression { env.LCI_RUN_OSV == 'true' } }
+            steps {
+                osvScan(logFile: 'osv.log')
+            }
+            post { failure { script { archiveFailure('osv', 'osv.log') } } }
+        }
+        // <<< local-ci:stage:osv
+
         // >>> local-ci:stage:sonar
         stage('SonarQube') {
             when { expression { env.LCI_RUN_SONAR == 'true' } }
             steps {
-                catchError(stageResult: 'FAILURE') {
+                script {
+                    catchError(stageResult: 'FAILURE') {
                     // sonar.sources points at real source dirs, never '.': a repo
                     // root almost always holds node_modules/.venv/build output,
                     // and the scanner's indexing walk can crash on those before
                     // sonar.exclusions is ever consulted.
-                    sonarScan(
-                        scannerArgs: "-Dsonar.projectKey=${env.LCI_SONAR_KEY} -Dsonar.sources=${env.LCI_SONAR_SOURCES}",
-                        logFile: 'sonar.log',
-                    )
+                    def sonarArgs = [
+                        "-Dsonar.projectKey=${env.LCI_SONAR_KEY}",
+                        "-Dsonar.sources=${env.LCI_SONAR_SOURCES}",
+                    ]
+                    if (env.LCI_SONAR_TESTS) { sonarArgs << "-Dsonar.tests=${env.LCI_SONAR_TESTS}" }
+                    if (env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS) {
+                        sonarArgs << "-Dsonar.python.coverage.reportPaths=${env.LCI_SONAR_PYTHON_COVERAGE_REPORT_PATHS}"
+                    }
+                    def sarifReports = []
+                    if (env.LCI_RUN_OPENGREP == 'true') { sarifReports << 'security-reports/opengrep.sarif' }
+                    if (env.LCI_RUN_OSV == 'true') { sarifReports << 'security-reports/osv.sarif' }
+                    if (sarifReports) { sonarArgs << "-Dsonar.sarifReportPaths=${sarifReports.join(',')}" }
+                    if (env.LCI_RUN_BANDIT == 'true') { sonarArgs << '-Dsonar.python.bandit.reportPaths=security-reports/bandit.json' }
+                        sonarScan(
+                            scannerArgs: sonarArgs.join(' '),
+                            logFile: 'sonar.log',
+                        )
+                    }
                 }
             }
             post {
@@ -241,11 +400,7 @@ pipeline {
                     script {
                         try {
                             withCredentials([string(credentialsId: 'github-issues-token', variable: 'GH_TOKEN')]) {
-                                fileSonarIssuesAsGithubTasks(
-                                    projectKey: env.LCI_SONAR_KEY,
-                                    mainBranches: ['main', 'develop'],
-                                    severities: ['BLOCKER', 'CRITICAL', 'MAJOR', 'MINOR', 'INFO'],
-                                )
+                                fileSonarIssuesAsGithubTasks(projectKey: env.LCI_SONAR_KEY)
                             }
                         } catch (err) { echo "Skipping SonarQube issue filing: ${err.message}" }
                     }
@@ -255,47 +410,24 @@ pipeline {
         // <<< local-ci:stage:sonar
 
         // ------------------------------------------------------------------
-        // Placeholders for steps this library does not ship yet — see local-ci's
-        // TODO.md. Uncomment a block once the corresponding step exists.
-        //
-        // >>> local-ci:stage:semgrep
-        // stage('SAST (Semgrep)') {
-        //     steps {
-        //         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-        //             semgrepScan(paths: env.LCI_SONAR_SOURCES.tokenize(','), logFile: 'semgrep.log')
-        //         }
-        //     }
-        // }
-        // <<< local-ci:stage:semgrep
-        //
-        // >>> local-ci:stage:bandit
-        // stage('SAST (Bandit — Python)') {
-        //     when { expression { env.LCI_LANGS.tokenize(',')*.trim().contains('python') } }
-        //     steps { banditScan(paths: [...], logFile: 'bandit.log') }
-        // }
-        // <<< local-ci:stage:bandit
-        //
+        // OWASP ZAP remains a future per-project DAST integration because it
+        // needs a deployed, reachable application target.
         // >>> local-ci:stage:zap
         // stage('DAST (OWASP ZAP)') {
         //     steps { zapBaselineScan(targetUrl: 'http://localhost:8080') }
         // }
         // <<< local-ci:stage:zap
         //
-        // eslint-plugin-security is deliberately NOT a stage here: Semgrep's
-        // JS/TS rules cover the same injection classes with better precision, and
-        // a project already running ESLint can add the plugin to its own config
-        // in one line.
         // ------------------------------------------------------------------
     }
 
     post {
-        always { archiveArtifacts artifacts: 'ci-reports/*.md', allowEmptyArchive: true }
+        always { archiveArtifacts artifacts: 'ci-reports/*.md,security-reports/**/*', allowEmptyArchive: true }
 
-        // Wired from BOTH unstable and failure. A report-only scanner (the
-        // Dependency-Check stage above, and every SAST step to come) marks the
-        // build UNSTABLE, which does NOT trigger post { failure } — so a
-        // failure-only wiring would write ci-reports/*.md and then never deliver
-        // them to the PR comment or the ci-reports/<branch> ref.
+        // Wired from BOTH unstable and failure. Dependency-Check is report-only
+        // and marks the build UNSTABLE, which does NOT trigger post { failure }
+        // — so a failure-only wiring would write ci-reports/*.md and then never
+        // deliver them to the PR comment or the ci-reports/<branch> ref.
         unstable { script { deliverCiReports() } }
         failure  { script { deliverCiReports() } }
     }
